@@ -29,7 +29,7 @@ class _MyAppState extends State<MyApp>{
     return MaterialApp(
       title: 'doocat',
       theme: ThemeData(
-        primaryColor: Colors.cyan[200],
+        primaryColor: Colors.lightGreen,
       ),
       home: Scaffold(
         appBar: AppBar(
@@ -40,7 +40,17 @@ class _MyAppState extends State<MyApp>{
             future: futureRates,
             builder: (context, snapshot){
               if(snapshot.hasData){
-                return Text("Kurs ${snapshot.data!.code} to ${snapshot.data!.bid}/${snapshot.data!.ask}");
+                //return Text("Kurs ${snapshot.data!.code} to ${snapshot.data!.bid}/${snapshot.data!.ask}");
+                return ListView.builder(
+                  itemCount: snapshot.data!.rates.length,
+                  itemBuilder: (context, index){
+                    Rate currRate = snapshot.data!.rates[index];
+                    return ListTile(
+                      title: Text("${currRate.code}: ${((currRate.bid + currRate.ask)/2).toStringAsFixed(4)}",
+                      style: const TextStyle(fontSize: 18)),
+                    );
+                  },
+                );
               } else if (snapshot.hasError){
                 return Text("${snapshot.error}");
               }
@@ -54,31 +64,41 @@ class _MyAppState extends State<MyApp>{
 }
 
 class Rates{
-  final String code;
-  final double bid;
-  final double ask;
+  final List<Rate> rates;
 
   const Rates({
-    required this.code,
-    required this.bid,
-    required this.ask,
+    required this.rates,
   });
 
   factory Rates.fromJson(Map<String, dynamic> json){
-    int i = 0;
+    List<Rate> temp = List.empty(growable: true);
+    for (var rate in json['rates']){
+      temp.add(Rate(code: rate['code'], bid: rate['bid'], ask: rate['ask']));
+    }
     return Rates(
-      code: json['code'],
-      bid: json['rates'][i]['bid'],
-      ask: json['rates'][i]['ask']
+      rates: temp,
     );
   }
 }
 
+class Rate{
+  final String code;
+  final double bid;
+  final double ask;
+
+  const Rate({
+    required this.code,
+    required this.bid,
+    required this.ask,
+  });
+}
+
 Future<Rates> fetchRates() async{
   final response = await http
-      .get(Uri.parse('http://api.nbp.pl/api/exchangerates/rates/c/chf/today/?format=json'));
+      .get(Uri.parse('http://api.nbp.pl/api/exchangerates/tables/c/?format=json'));
   if(response.statusCode == 200){
-    return Rates.fromJson(jsonDecode(response.body));
+    var jsonZdekodowany = jsonDecode(response.body);
+    return Rates.fromJson(jsonZdekodowany[0]);
   } else {
     throw Exception('Failed to fetch rates');
   }
