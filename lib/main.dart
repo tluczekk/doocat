@@ -3,6 +3,7 @@ import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'utils/rates.dart';
 
 void main() {
   runApp(const MyApp());
@@ -63,43 +64,4 @@ class _MyAppState extends State<MyApp>{
   }
 }
 
-class Rates{
-  final List<Rate> rates;
 
-  const Rates({
-    required this.rates,
-  });
-
-  factory Rates.fromJson(Map<String, dynamic> json){
-    List<Rate> temp = List.empty(growable: true);
-    for (var rate in json['rates']){
-      temp.add(Rate(code: rate['code'], bid: rate['bid'], ask: rate['ask']));
-    }
-    return Rates(
-      rates: temp,
-    );
-  }
-}
-
-class Rate{
-  final String code;
-  final double bid;
-  final double ask;
-
-  const Rate({
-    required this.code,
-    required this.bid,
-    required this.ask,
-  });
-}
-
-Future<Rates> fetchRates() async{
-  final response = await http
-      .get(Uri.parse('http://api.nbp.pl/api/exchangerates/tables/c/?format=json'));
-  if(response.statusCode == 200){
-    var jsonZdekodowany = jsonDecode(response.body);
-    return Rates.fromJson(jsonZdekodowany[0]);
-  } else {
-    throw Exception('Failed to fetch rates');
-  }
-}
