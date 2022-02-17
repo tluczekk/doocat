@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:ffi';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:flag/flag.dart';
 import 'utils/rates.dart';
 
 void main() {
@@ -41,16 +41,10 @@ class _MyAppState extends State<MyApp>{
             future: futureRates,
             builder: (context, snapshot){
               if(snapshot.hasData){
-                //return Text("Kurs ${snapshot.data!.code} to ${snapshot.data!.bid}/${snapshot.data!.ask}");
-                return ListView.builder(
-                  itemCount: snapshot.data!.rates.length,
-                  itemBuilder: (context, index){
-                    Rate currRate = snapshot.data!.rates[index];
-                    return ListTile(
-                      title: Text("${currRate.code}: ${((currRate.bid + currRate.ask)/2).toStringAsFixed(4)}",
-                      style: const TextStyle(fontSize: 18)),
-                    );
-                  },
+                return ListView(
+                  children: [
+                    _createDataTable(snapshot.data!.rates)
+                  ],
                 );
               } else if (snapshot.hasError){
                 return Text("${snapshot.error}");
@@ -64,4 +58,33 @@ class _MyAppState extends State<MyApp>{
   }
 }
 
+DataTable _createDataTable(List<Rate> rates){
+  return DataTable(columns: _createColumns(), rows: _createRows(rates));
+}
 
+List<DataColumn> _createColumns(){
+  return [
+    const DataColumn(label: Text("")),
+    const DataColumn(label: Text("Waluta")),
+    const DataColumn(label: Text("Kupno")),
+    const DataColumn(label: Text("Sprzedaż")),
+  ];
+}
+
+List<DataRow> _createRows(List<Rate> rates) {
+  List<DataRow> temp = List.empty(growable: true);
+  for (Rate r in rates) {
+    temp.add(
+        DataRow(
+            cells: [
+              DataCell(Flag.fromString(
+                r.code.substring(0, 2), height: 50, width: 50,)),
+              DataCell(Text(r.code)),
+              DataCell(Text(r.ask.toString())),
+              DataCell(Text(r.bid.toString()))
+            ]
+        )
+    );
+  }
+  return temp;
+}
